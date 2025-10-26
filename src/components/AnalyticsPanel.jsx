@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Activity } from 'lucide-react';
 
-const API = import.meta.env.VITE_BACKEND_URL || '';
+const API = (import.meta.env.VITE_BACKEND_URL?.replace(/\/$/, '') || 'http://localhost:8000');
 
 const MOCK_ANALYTICS = { win_rate: 61.3, rr: 1.85, avg_roi: 1.4, weekly: 3.2 };
 

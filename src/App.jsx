@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bell, Settings, X } from 'lucide-react';
+import { Bell, Settings, X, Shield, Flame } from 'lucide-react';
 import HeroCover3D from './components/HeroCover3D';
 import SignalFeed from './components/SignalFeed';
 import Heatmap from './components/Heatmap';
@@ -17,8 +17,8 @@ export default function App() {
           <div className="flex items-center gap-3">
             <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-emerald-500 to-sky-500" />
             <div>
-              <p className="text-sm text-white/50 leading-none">AI Quant Cockpit</p>
-              <h1 className="text-lg font-semibold leading-none">AlphaDesk</h1>
+              <p className="text-xs text-white/50 leading-none">AI Quant Cockpit</p>
+              <h1 className="text-lg font-semibold leading-none tracking-tight">AlphaDesk</h1>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -54,8 +54,11 @@ export default function App() {
               safetyPaused ? 'bg-rose-600/20 text-rose-300' : 'bg-zinc-900 text-white/80 hover:bg-zinc-800'
             }`}
           >
-            {safetyPaused ? 'Safety Mode: Paused (no new signals)' : 'Safety Mode: Active'}
+            <Shield className="h-3.5 w-3.5" /> {safetyPaused ? 'Safety Mode: Paused (no new signals)' : 'Safety Mode: Active'}
           </button>
+          <span className="ml-auto inline-flex items-center gap-2 text-xs text-white/50">
+            <Flame className="h-3.5 w-3.5 text-emerald-400" /> Live alpha scans 24/7
+          </span>
         </div>
 
         {/* Main grid */}
@@ -69,7 +72,7 @@ export default function App() {
             {/* Safety Notice */}
             <div className="rounded-xl border border-white/10 bg-zinc-900 p-4">
               <p className="text-sm text-white/80 font-medium">Safety Mode</p>
-              <p className="mt-1 text-xs text-white/60">If volatility exceeds threshold, new signals are paused and position sizing is reduced automatically.</p>
+              <p className="mt-1 text-xs text-white/60">If volatility exceeds threshold, new signals pause and position sizing reduces automatically.</p>
               <div className="mt-3 h-2 w-full rounded bg-zinc-800 overflow-hidden">
                 <div className="h-full bg-gradient-to-r from-rose-500 to-amber-400" style={{ width: '36%' }} />
               </div>
@@ -80,7 +83,7 @@ export default function App() {
 
         {/* Footer */}
         <div className="mt-8 text-center text-xs text-white/40">
-          Built for elite traders • Simulated demo UI. Connect to your data sources and execution to go live.
+          Built for elite traders • Demo-friendly UI with live API hooks. Configure your backend URL to go live.
         </div>
       </div>
     </div>

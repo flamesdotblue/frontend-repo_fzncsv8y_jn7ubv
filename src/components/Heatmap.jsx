@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 
-const API = import.meta.env.VITE_BACKEND_URL || '';
+const API = (import.meta.env.VITE_BACKEND_URL?.replace(/\/$/, '') || 'http://localhost:8000');
 
 const MOCK_HEATMAP = [
   { pair: 'BTCUSDT', vol_pct: 4.2 },
