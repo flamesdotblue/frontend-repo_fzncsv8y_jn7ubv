@@ -5,7 +5,7 @@ export default function HeroCover3D() {
   return (
     <section className="relative w-full h-[340px] overflow-hidden rounded-xl border border-white/10 bg-black">
       <Spline
-        scene="https://prod.spline.design/44zrIZf-iQZhbQNQ/scene.splinecode"
+        scene="https://prod.spline.design/vi0ijCQQJTRFc8LA/scene.splinecode"
         style={{ width: '100%', height: '100%' }}
       />
       {/* Gradient + Title Overlay (non-blocking) */}
