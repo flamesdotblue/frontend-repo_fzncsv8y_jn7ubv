@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Activity } from 'lucide-react';
 
+const API = import.meta.env.VITE_BACKEND_URL || '';
+
 function Stat({ label, value, sub }) {
   return (
     <div className="rounded-xl border border-white/10 bg-zinc-900 p-4">
@@ -12,16 +14,23 @@ function Stat({ label, value, sub }) {
 }
 
 export default function AnalyticsPanel() {
-  const [stats, setStats] = useState({ winRate: 62, rr: 1.8, avgRoi: 14.2, weekly: 7.1 });
+  const [stats, setStats] = useState({ win_rate: 0, rr: 0, avg_roi: 0, weekly: 0 });
+  const [error, setError] = useState('');
+
+  const fetchStats = async () => {
+    try {
+      const res = await fetch(`${API}/api/analytics`);
+      const json = await res.json();
+      setStats(json);
+      setError('');
+    } catch (e) {
+      setError('Analytics unavailable.');
+    }
+  };
+
   useEffect(() => {
-    const id = setInterval(() => {
-      setStats((s) => ({
-        winRate: Math.min(95, Math.max(35, s.winRate + (Math.random() * 2 - 1))),
-        rr: Math.max(0.8, Math.min(3.5, s.rr + (Math.random() * 0.2 - 0.1))),
-        avgRoi: Math.max(-10, Math.min(40, s.avgRoi + (Math.random() * 1.5 - 0.75))),
-        weekly: Math.max(-20, Math.min(60, s.weekly + (Math.random() * 2 - 1))),
-      }));
-    }, 2000);
+    fetchStats();
+    const id = setInterval(fetchStats, 15000);
     return () => clearInterval(id);
   }, []);
 
@@ -31,14 +40,15 @@ export default function AnalyticsPanel() {
         <Activity className="h-4 w-4 text-emerald-400" />
         <h2 className="text-lg font-medium text-white">Performance Analytics</h2>
       </div>
+      {error && <div className="mb-3 text-xs text-amber-400">{error}</div>}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Stat label="Win Rate" value={`${stats.winRate.toFixed(1)}%`} sub="last 200 trades" />
-        <Stat label="Avg Risk/Reward" value={`${stats.rr.toFixed(2)}R`} sub="net of fees" />
-        <Stat label="Avg ROI" value={`${stats.avgRoi.toFixed(1)}%`} sub="per closed signal" />
-        <Stat label="This Week" value={`${stats.weekly.toFixed(1)}%`} sub="PnL (simulated)" />
+        <Stat label="Win Rate" value={`${(stats.win_rate || 0).toFixed?.(1) ? stats.win_rate.toFixed(1) : stats.win_rate}%`} sub="last 200 trades" />
+        <Stat label="Avg Risk/Reward" value={`${Number(stats.rr || 0).toFixed(2)}R`} sub="net of fees" />
+        <Stat label="Avg ROI" value={`${Number(stats.avg_roi || 0).toFixed(1)}%`} sub="per closed signal" />
+        <Stat label="This Week" value={`${Number(stats.weekly || 0).toFixed(1)}%`} sub="PnL" />
       </div>
       <div className="mt-4 rounded-xl border border-white/10 bg-zinc-900 p-4">
-        <p className="text-xs text-white/60">Equity Curve (simulated)</p>
+        <p className="text-xs text-white/60">Equity Curve (live refresh)</p>
         <EquitySparkline />
       </div>
     </section>
@@ -50,7 +60,7 @@ function EquitySparkline() {
   useEffect(() => {
     const id = setInterval(() => {
       setPoints((prev) => {
-        const next = [...prev.slice(1), Math.max(20, Math.min(120, prev[prev.length - 1] + (Math.random() * 8 - 4)))];
+        const next = [...prev.slice(1), Math.max(20, Math.min(120, prev[prev.length - 1] + (Math.random() * 8 - 4)))]);
         return next;
       });
     }, 1000);

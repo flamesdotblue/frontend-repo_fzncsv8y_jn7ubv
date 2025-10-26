@@ -3,10 +3,32 @@
 > vite
 
 
-  VITE v5.4.20  ready in 265 ms
+  VITE v5.4.20  ready in 212 ms
 
   ➜  Local:   http://localhost:3000/
   ➜  Network: http://172.20.42.119:3000/
-8:02:57 PM [vite] ✨ new dependencies optimized: lucide-react, @splinetool/react-spline
-8:02:57 PM [vite] ✨ optimized dependencies changed. reloading
-The file does not exist at "/home/workspace/node_modules/.vite/deps/chunk-XPR23Y44.js?v=35394813" which is in the optimize deps directory. The dependency might be incompatible with the dep optimizer. Try adding it to `optimizeDeps.exclude`.
+8:12:30 PM [vite] Pre-transform error: Transform failed with 1 error:
+/home/workspace/src/components/AnalyticsPanel.jsx:63:117: ERROR: Expected ";" but found ")"
+8:12:31 PM [vite] Internal server error: Transform failed with 1 error:
+/home/workspace/src/components/AnalyticsPanel.jsx:63:117: ERROR: Expected ";" but found ")"
+  Plugin: vite:esbuild
+  File: /home/workspace/src/components/AnalyticsPanel.jsx:63:117
+  
+  Expected ";" but found ")"
+  61 |      const id = setInterval(() => {
+  62 |        setPoints((prev) => {
+  63 |          const next = [...prev.slice(1), Math.max(20, Math.min(120, prev[prev.length - 1] + (Math.random() * 8 - 4)))]);
+     |                                                                                                                       ^
+  64 |          return next;
+  65 |        });
+  
+      at failureErrorWithLog (/home/workspace/node_modules/esbuild/lib/main.js:1472:15)
+      at /home/workspace/node_modules/esbuild/lib/main.js:755:50
+      at responseCallbacks.<computed> (/home/workspace/node_modules/esbuild/lib/main.js:622:9)
+      at handleIncomingPacket (/home/workspace/node_modules/esbuild/lib/main.js:677:12)
+      at Socket.readFromStdout (/home/workspace/node_modules/esbuild/lib/main.js:600:7)
+      at Socket.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+      at Readable.push (node:internal/streams/readable:390:5)
+      at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)

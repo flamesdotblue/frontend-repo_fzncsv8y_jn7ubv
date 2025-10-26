@@ -1,30 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Rocket, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 
-const PAIRS = ['BTCUSDT','ETHUSDT','SOLUSDT','BNBUSDT','XRPUSDT','ADAUSDT','DOGEUSDT','AVAXUSDT','OPUSDT','LINKUSDT'];
-
-function randomSignal() {
-  const pair = PAIRS[Math.floor(Math.random() * PAIRS.length)];
-  const type = Math.random() > 0.5 ? 'LONG' : 'SHORT';
-  const price = +(Math.random() * 50000 + 1000).toFixed(2);
-  const conf = Math.floor(Math.random() * 50) + 50; // 50-100
-  const size = +(Math.random() * 200 + 20).toFixed(0);
-  const lev = [5, 10, 20, 25, 50][Math.floor(Math.random() * 5)];
-  const range = [+(price * (1 - 0.003)).toFixed(2), +(price * (1 + 0.003)).toFixed(2)];
-  const tp1 = +(price * (type === 'LONG' ? 1.006 : 0.994)).toFixed(2);
-  const tp2 = +(price * (type === 'LONG' ? 1.012 : 0.988)).toFixed(2);
-  const tp3 = +(price * (type === 'LONG' ? 1.02 : 0.98)).toFixed(2);
-  const sl = +(price * (type === 'LONG' ? 0.992 : 1.008)).toFixed(2);
-  const risk = +(size * 0.05).toFixed(2);
-  const proj = +(conf / 100 * lev * 2).toFixed(1);
-  const reason = type === 'LONG'
-    ? 'Breakout from 15m compression zone with rising volume'
-    : 'Rejection at supply zone with funding flip and OI unwind';
-  return { id: crypto.randomUUID(), ts: Date.now(), pair, type, price, conf, size, lev, range, tp1, tp2, tp3, sl, risk, proj, reason };
-}
+const API = import.meta.env.VITE_BACKEND_URL || '';
 
 function ConfidenceDial({ value }) {
-  const angle = (value / 100) * 270; // 0..270 deg semi-circle
+  const angle = (value / 100) * 270;
   const color = value > 80 ? 'text-emerald-400' : value > 65 ? 'text-amber-400' : 'text-rose-400';
   return (
     <div className="relative w-20 h-20">
@@ -71,7 +51,7 @@ function SignalCard({ s }) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className={`h-2.5 w-2.5 rounded-full ${isLong ? 'bg-emerald-400' : 'bg-rose-400'}`} />
-          <p className="text-sm text-white/60">{new Date(s.ts).toLocaleTimeString()}</p>
+          <p className="text-sm text-white/60">{new Date(s.timestamp).toLocaleTimeString()}</p>
         </div>
         <div className="flex items-center gap-2">
           {isLong ? <ArrowUpRight className="h-4 w-4 text-emerald-400" /> : <ArrowDownRight className="h-4 w-4 text-rose-400" />}
@@ -83,22 +63,22 @@ function SignalCard({ s }) {
         <div className="md:col-span-2 flex items-center gap-4">
           <div className="min-w-[80px]">
             <p className="text-white font-semibold">{s.pair}</p>
-            <p className="text-white/60 text-sm">Price {s.price.toLocaleString()}</p>
+            <p className="text-white/60 text-sm">Price {Number(s.price).toLocaleString()}</p>
           </div>
           <div className="hidden sm:block">
             <MiniSpark color={isLong ? '#34d399' : '#fb7185'} />
           </div>
         </div>
         <div className="flex items-center gap-6">
-          <ConfidenceDial value={s.conf} />
+          <ConfidenceDial value={s.confidence} />
           <div>
             <p className="text-xs text-white/50">Size</p>
-            <p className="text-white font-medium">${s.size} @ {s.lev}x</p>
-            <p className="text-xs text-white/50 mt-1">Risk ${s.risk} • Projected ROI {s.proj}%</p>
+            <p className="text-white font-medium">${s.size_usdt} @ {s.leverage}x</p>
+            <p className="text-xs text-white/50 mt-1">Risk ${s.risk_usdt} • Projected ROI {s.projected_roi_pct}%</p>
           </div>
         </div>
         <div className="text-xs text-white/70">
-          <p><span className="text-white/50">Entry:</span> {s.range[0]} – {s.range[1]}</p>
+          <p><span className="text-white/50">Entry:</span> {s.entry_low} – {s.entry_high}</p>
           <p><span className="text-white/50">TP:</span> {s.tp1} / {s.tp2} / {s.tp3}</p>
           <p><span className="text-white/50">SL:</span> {s.sl}</p>
         </div>
@@ -110,23 +90,31 @@ function SignalCard({ s }) {
 }
 
 export default function SignalFeed() {
-  const [signals, setSignals] = useState(() => Array.from({ length: 4 }, () => randomSignal()));
+  const [signals, setSignals] = useState([]);
+  const [error, setError] = useState('');
   const listRef = useRef(null);
 
+  const fetchSignals = async () => {
+    try {
+      const res = await fetch(`${API}/api/signals`);
+      const json = await res.json();
+      if (Array.isArray(json)) setSignals(json);
+      setError('');
+    } catch (e) {
+      setError('Live data unavailable. Retrying...');
+    }
+  };
+
   useEffect(() => {
-    const id = setInterval(() => {
-      if (Math.random() > 0.4) {
-        const next = randomSignal();
-        setSignals((prev) => [next, ...prev].slice(0, 20));
-      }
-    }, 1000);
+    fetchSignals();
+    const id = setInterval(fetchSignals, 5000);
     return () => clearInterval(id);
   }, []);
 
   const summary = useMemo(() => {
     const long = signals.filter((s) => s.type === 'LONG').length;
     const short = signals.length - long;
-    const confAvg = Math.round(signals.reduce((a, b) => a + b.conf, 0) / (signals.length || 1));
+    const confAvg = Math.round(signals.reduce((a, b) => a + (b.confidence || 0), 0) / (signals.length || 1));
     return { long, short, confAvg };
   }, [signals]);
 
@@ -139,9 +127,10 @@ export default function SignalFeed() {
         </div>
         <p className="text-xs text-white/50">L {summary.long} · S {summary.short} · Avg Conf {summary.confAvg}%</p>
       </div>
+      {error && <div className="mb-3 text-xs text-amber-400">{error}</div>}
       <div ref={listRef} className="flex flex-col gap-3 max-h-[560px] overflow-auto pr-1">
         {signals.map((s) => (
-          <SignalCard key={s.id} s={s} />
+          <SignalCard key={`${s.pair}-${s.timestamp}`} s={s} />
         ))}
       </div>
     </section>
