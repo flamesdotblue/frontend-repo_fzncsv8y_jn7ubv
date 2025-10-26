@@ -1,7 +1,28 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Rocket, ArrowUpRight, ArrowDownRight, Pause, Play, Filter } from 'lucide-react';
+import { Rocket, ArrowUpRight, ArrowDownRight, Pause, Play, Filter, RefreshCcw } from 'lucide-react';
 
 const API = import.meta.env.VITE_BACKEND_URL || '';
+
+const MOCK_SIGNALS = [
+  {
+    pair: 'BTCUSDT', type: 'LONG', price: 67123, confidence: 82,
+    entry_low: 67000, entry_high: 67200, tp1: 67500, tp2: 68100, tp3: 69200,
+    sl: 66400, size_usdt: 2000, leverage: 5, risk_usdt: 80, projected_roi_pct: 3.4,
+    reason: 'Trend pullback to EMA cluster + strong delta buy imbalance', timestamp: new Date().toISOString()
+  },
+  {
+    pair: 'ETHUSDT', type: 'SHORT', price: 3120, confidence: 74,
+    entry_low: 3115, entry_high: 3130, tp1: 3080, tp2: 3045, tp3: 2990,
+    sl: 3158, size_usdt: 1500, leverage: 6, risk_usdt: 70, projected_roi_pct: 2.7,
+    reason: 'Failed breakout at prior supply, funding skew bearish', timestamp: new Date(Date.now()-60_000).toISOString()
+  },
+  {
+    pair: 'SOLUSDT', type: 'LONG', price: 178.4, confidence: 68,
+    entry_low: 177.7, entry_high: 178.6, tp1: 181.5, tp2: 185.2, tp3: 189.0,
+    sl: 175.9, size_usdt: 1200, leverage: 4, risk_usdt: 55, projected_roi_pct: 3.1,
+    reason: 'Range reclaim + rising OI with positive CVD', timestamp: new Date(Date.now()-120_000).toISOString()
+  }
+];
 
 function ConfidenceDial({ value }) {
   const angle = (value / 100) * 270;
@@ -103,14 +124,20 @@ export default function SignalFeed({ selectedPair, safetyPaused }) {
   const fetchSignals = async () => {
     try {
       const res = await fetch(`${API}/api/signals`);
+      if (!res.ok) throw new Error('bad status');
       const json = await res.json();
       if (Array.isArray(json)) {
         setSignals(json);
         setLastUpdated(Date.now());
+      } else {
+        throw new Error('bad payload');
       }
       setError('');
     } catch (e) {
-      setError('Live data unavailable. Retrying...');
+      // fallback to mock so app never feels broken
+      setSignals(MOCK_SIGNALS);
+      setLastUpdated(Date.now());
+      setError('Connected to demo data while live API is unavailable.');
     }
   };
 
@@ -195,12 +222,18 @@ export default function SignalFeed({ selectedPair, safetyPaused }) {
         >
           {paused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />} {paused ? 'Resume' : 'Pause'}
         </button>
+        <button
+          onClick={fetchSignals}
+          className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-zinc-900 px-3 py-1.5 text-sm hover:bg-zinc-800"
+        >
+          <RefreshCcw className="h-4 w-4" /> Refresh
+        </button>
       </div>
 
       {error && <div className="mb-3 text-xs text-amber-400">{error}</div>}
       <div ref={listRef} className="flex flex-col gap-3 max-h-[560px] overflow-auto pr-1">
-        {filtered.map((s) => (
-          <SignalCard key={`${s.pair}-${s.timestamp}`} s={s} />
+        {filtered.map((s, idx) => (
+          <SignalCard key={`${s.pair}-${s.timestamp}-${idx}`} s={s} />
         ))}
         {!filtered.length && (
           <div className="rounded-xl border border-white/10 bg-zinc-900 p-6 text-center text-sm text-white/50">

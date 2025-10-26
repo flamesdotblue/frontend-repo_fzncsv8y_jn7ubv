@@ -2,33 +2,9 @@
 > vibe-generated-app@1.0.0 dev
 > vite
 
-
-  VITE v5.4.20  ready in 229 ms
-
-  ➜  Local:   http://localhost:3000/
-  ➜  Network: http://172.20.42.119:3000/
-8:34:12 PM [vite] Pre-transform error: Transform failed with 1 error:
-/home/workspace/src/components/AnalyticsPanel.jsx:63:117: ERROR: Expected ";" but found ")"
-8:34:12 PM [vite] Internal server error: Transform failed with 1 error:
-/home/workspace/src/components/AnalyticsPanel.jsx:63:117: ERROR: Expected ";" but found ")"
-  Plugin: vite:esbuild
-  File: /home/workspace/src/components/AnalyticsPanel.jsx:63:117
-  
-  Expected ";" but found ")"
-  61 |      const id = setInterval(() => {
-  62 |        setPoints((prev) => {
-  63 |          const next = [...prev.slice(1), Math.max(20, Math.min(120, prev[prev.length - 1] + (Math.random() * 8 - 4)))]);
-     |                                                                                                                       ^
-  64 |          return next;
-  65 |        });
-  
-      at failureErrorWithLog (/home/workspace/node_modules/esbuild/lib/main.js:1472:15)
-      at /home/workspace/node_modules/esbuild/lib/main.js:755:50
-      at responseCallbacks.<computed> (/home/workspace/node_modules/esbuild/lib/main.js:622:9)
-      at handleIncomingPacket (/home/workspace/node_modules/esbuild/lib/main.js:677:12)
-      at Socket.readFromStdout (/home/workspace/node_modules/esbuild/lib/main.js:600:7)
-      at Socket.emit (node:events:508:28)
-      at addChunk (node:internal/streams/readable:559:12)
-      at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
-      at Readable.push (node:internal/streams/readable:390:5)
-      at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)
+error when starting dev server:
+Error: Port 3000 is already in use
+    at Server.onError (file:///home/workspace/node_modules/vite/dist/node/chunks/dep-D_zLpgQd.js:45596:18)
+    at Server.emit (node:events:508:28)
+    at emitErrorNT (node:net:1976:8)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)

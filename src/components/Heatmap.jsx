@@ -2,6 +2,19 @@ import React, { useEffect, useMemo, useState } from 'react';
 
 const API = import.meta.env.VITE_BACKEND_URL || '';
 
+const MOCK_HEATMAP = [
+  { pair: 'BTCUSDT', vol_pct: 4.2 },
+  { pair: 'ETHUSDT', vol_pct: -2.8 },
+  { pair: 'SOLUSDT', vol_pct: 6.7 },
+  { pair: 'BNBUSDT', vol_pct: 1.9 },
+  { pair: 'XRPUSDT', vol_pct: -4.1 },
+  { pair: 'ADAUSDT', vol_pct: 2.5 },
+  { pair: 'DOGEUSDT', vol_pct: 3.1 },
+  { pair: 'ARBUSDT', vol_pct: -1.2 },
+  { pair: 'OPUSDT', vol_pct: 0.8 },
+  { pair: 'LINKUSDT', vol_pct: 5.4 }
+];
+
 function getColorFromVol(vol) {
   if (vol > 6) return 'bg-emerald-500/80 text-black';
   if (vol > 3) return 'bg-emerald-400/70 text-black';
@@ -18,11 +31,17 @@ export default function Heatmap({ onSelectPair }) {
   const fetchHeatmap = async () => {
     try {
       const res = await fetch(`${API}/api/heatmap`);
+      if (!res.ok) throw new Error('bad status');
       const json = await res.json();
-      if (Array.isArray(json)) setData(json);
+      if (Array.isArray(json)) {
+        setData(json);
+      } else {
+        throw new Error('bad payload');
+      }
       setError('');
     } catch (e) {
-      setError('Heatmap live data unavailable.');
+      setData(MOCK_HEATMAP);
+      setError('Showing demo heatmap while live API is unavailable.');
     }
   };
 
@@ -60,7 +79,7 @@ export default function Heatmap({ onSelectPair }) {
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-medium">{item.pair}</span>
-                <span className="text-xs font-semibold">{volNum > 0 ? '+' : ''}{volNum.toFixed(2)}%</span>
+                <span className="text-xs font-semibold">{volNum > 0 ? '+' : ''}{Number.isFinite(volNum) ? volNum.toFixed(2) : '0.00'}%</span>
               </div>
               <div className="mt-2 h-2 w-full rounded bg-black/20 overflow-hidden">
                 <div

@@ -3,6 +3,8 @@ import { Activity } from 'lucide-react';
 
 const API = import.meta.env.VITE_BACKEND_URL || '';
 
+const MOCK_ANALYTICS = { win_rate: 61.3, rr: 1.85, avg_roi: 1.4, weekly: 3.2 };
+
 function Stat({ label, value, sub }) {
   return (
     <div className="rounded-xl border border-white/10 bg-zinc-900 p-4">
@@ -14,17 +16,19 @@ function Stat({ label, value, sub }) {
 }
 
 export default function AnalyticsPanel() {
-  const [stats, setStats] = useState({ win_rate: 0, rr: 0, avg_roi: 0, weekly: 0 });
+  const [stats, setStats] = useState(MOCK_ANALYTICS);
   const [error, setError] = useState('');
 
   const fetchStats = async () => {
     try {
       const res = await fetch(`${API}/api/analytics`);
+      if (!res.ok) throw new Error('bad status');
       const json = await res.json();
       setStats(json);
       setError('');
     } catch (e) {
-      setError('Analytics unavailable.');
+      setStats(MOCK_ANALYTICS);
+      setError('Showing demo analytics while live API is unavailable.');
     }
   };
 
@@ -34,6 +38,11 @@ export default function AnalyticsPanel() {
     return () => clearInterval(id);
   }, []);
 
+  const win = `${Number(stats.win_rate || 0).toFixed(1)}%`;
+  const rr = `${Number(stats.rr || 0).toFixed(2)}R`;
+  const avg = `${Number(stats.avg_roi || 0).toFixed(1)}%`;
+  const wk = `${Number(stats.weekly || 0).toFixed(1)}%`;
+
   return (
     <section className="w-full">
       <div className="flex items-center gap-2 mb-3">
@@ -42,10 +51,10 @@ export default function AnalyticsPanel() {
       </div>
       {error && <div className="mb-3 text-xs text-amber-400">{error}</div>}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Stat label="Win Rate" value={`${(stats.win_rate || 0).toFixed?.(1) ? stats.win_rate.toFixed(1) : stats.win_rate}%`} sub="last 200 trades" />
-        <Stat label="Avg Risk/Reward" value={`${Number(stats.rr || 0).toFixed(2)}R`} sub="net of fees" />
-        <Stat label="Avg ROI" value={`${Number(stats.avg_roi || 0).toFixed(1)}%`} sub="per closed signal" />
-        <Stat label="This Week" value={`${Number(stats.weekly || 0).toFixed(1)}%`} sub="PnL" />
+        <Stat label="Win Rate" value={win} sub="last 200 trades" />
+        <Stat label="Avg Risk/Reward" value={rr} sub="net of fees" />
+        <Stat label="Avg ROI" value={avg} sub="per closed signal" />
+        <Stat label="This Week" value={wk} sub="PnL" />
       </div>
       <div className="mt-4 rounded-xl border border-white/10 bg-zinc-900 p-4">
         <p className="text-xs text-white/60">Equity Curve (live refresh)</p>
@@ -60,7 +69,7 @@ function EquitySparkline() {
   useEffect(() => {
     const id = setInterval(() => {
       setPoints((prev) => {
-        const next = [...prev.slice(1), Math.max(20, Math.min(120, prev[prev.length - 1] + (Math.random() * 8 - 4)))]);
+        const next = [...prev.slice(1), Math.max(20, Math.min(120, prev[prev.length - 1] + (Math.random() * 8 - 4)))] ;
         return next;
       });
     }, 1000);
