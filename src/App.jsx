@@ -1,11 +1,14 @@
-import React from 'react';
-import { Bell, Settings } from 'lucide-react';
+import React, { useState } from 'react';
+import { Bell, Settings, X } from 'lucide-react';
 import HeroCover3D from './components/HeroCover3D';
 import SignalFeed from './components/SignalFeed';
 import Heatmap from './components/Heatmap';
 import AnalyticsPanel from './components/AnalyticsPanel';
 
 export default function App() {
+  const [selectedPair, setSelectedPair] = useState('');
+  const [safetyPaused, setSafetyPaused] = useState(false);
+
   return (
     <div className="min-h-screen bg-black text-white">
       <div className="mx-auto max-w-7xl px-4 py-5">
@@ -31,14 +34,38 @@ export default function App() {
         {/* Hero cover */}
         <HeroCover3D />
 
+        {/* Filters / status */}
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          {selectedPair && (
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-zinc-900 px-3 py-1 text-xs">
+              Pair filter: <strong className="font-medium text-emerald-300">{selectedPair}</strong>
+              <button
+                aria-label="Clear pair filter"
+                className="rounded p-1 hover:bg-zinc-800"
+                onClick={() => setSelectedPair('')}
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </span>
+          )}
+          <button
+            onClick={() => setSafetyPaused((s) => !s)}
+            className={`inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-1 text-xs ${
+              safetyPaused ? 'bg-rose-600/20 text-rose-300' : 'bg-zinc-900 text-white/80 hover:bg-zinc-800'
+            }`}
+          >
+            {safetyPaused ? 'Safety Mode: Paused (no new signals)' : 'Safety Mode: Active'}
+          </button>
+        </div>
+
         {/* Main grid */}
         <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 flex flex-col gap-6">
-            <SignalFeed />
+            <SignalFeed selectedPair={selectedPair} safetyPaused={safetyPaused} />
             <AnalyticsPanel />
           </div>
           <div className="flex flex-col gap-6">
-            <Heatmap />
+            <Heatmap onSelectPair={setSelectedPair} />
             {/* Safety Notice */}
             <div className="rounded-xl border border-white/10 bg-zinc-900 p-4">
               <p className="text-sm text-white/80 font-medium">Safety Mode</p>

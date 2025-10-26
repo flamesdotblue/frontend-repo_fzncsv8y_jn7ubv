@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Rocket, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { Rocket, ArrowUpRight, ArrowDownRight, Pause, Play, Filter } from 'lucide-react';
 
 const API = import.meta.env.VITE_BACKEND_URL || '';
 
@@ -89,16 +89,25 @@ function SignalCard({ s }) {
   );
 }
 
-export default function SignalFeed() {
+export default function SignalFeed({ selectedPair, safetyPaused }) {
   const [signals, setSignals] = useState([]);
   const [error, setError] = useState('');
+  const [paused, setPaused] = useState(false);
+  const [query, setQuery] = useState('');
+  const [typeFilter, setTypeFilter] = useState('ALL'); // ALL | LONG | SHORT
+  const [sortKey, setSortKey] = useState('time'); // time | confidence
+  const [intervalMs, setIntervalMs] = useState(5000);
+  const [lastUpdated, setLastUpdated] = useState(0);
   const listRef = useRef(null);
 
   const fetchSignals = async () => {
     try {
       const res = await fetch(`${API}/api/signals`);
       const json = await res.json();
-      if (Array.isArray(json)) setSignals(json);
+      if (Array.isArray(json)) {
+        setSignals(json);
+        setLastUpdated(Date.now());
+      }
       setError('');
     } catch (e) {
       setError('Live data unavailable. Retrying...');
@@ -107,9 +116,23 @@ export default function SignalFeed() {
 
   useEffect(() => {
     fetchSignals();
-    const id = setInterval(fetchSignals, 5000);
-    return () => clearInterval(id);
   }, []);
+
+  useEffect(() => {
+    if (paused || safetyPaused) return;
+    const id = setInterval(fetchSignals, intervalMs);
+    return () => clearInterval(id);
+  }, [intervalMs, paused, safetyPaused]);
+
+  const filtered = useMemo(() => {
+    let arr = [...signals];
+    if (selectedPair) arr = arr.filter((s) => (s.pair || '').toLowerCase() === selectedPair.toLowerCase());
+    if (query) arr = arr.filter((s) => (s.pair || '').toLowerCase().includes(query.toLowerCase()));
+    if (typeFilter !== 'ALL') arr = arr.filter((s) => s.type === typeFilter);
+    if (sortKey === 'confidence') arr.sort((a, b) => (b.confidence || 0) - (a.confidence || 0));
+    else arr.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    return arr;
+  }, [signals, selectedPair, query, typeFilter, sortKey]);
 
   const summary = useMemo(() => {
     const long = signals.filter((s) => s.type === 'LONG').length;
@@ -120,18 +143,70 @@ export default function SignalFeed() {
 
   return (
     <section className="w-full">
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
         <div className="flex items-center gap-2">
           <Rocket className="h-4 w-4 text-emerald-400" />
           <h2 className="text-lg font-medium text-white">Live Signal Feed</h2>
+          <span className="text-xs text-white/40">{lastUpdated ? `Updated ${Math.round((Date.now()-lastUpdated)/1000)}s ago` : 'Loading...'}</span>
         </div>
         <p className="text-xs text-white/50">L {summary.long} · S {summary.short} · Avg Conf {summary.confAvg}%</p>
       </div>
+
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <div className="relative">
+          <Filter className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/40" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search pair (e.g., BTCUSDT)"
+            className="pl-8 rounded-lg border border-white/10 bg-zinc-900 px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500/30"
+          />
+        </div>
+        <select
+          value={typeFilter}
+          onChange={(e) => setTypeFilter(e.target.value)}
+          className="rounded-lg border border-white/10 bg-zinc-900 px-3 py-1.5 text-sm"
+        >
+          <option value="ALL">All</option>
+          <option value="LONG">Long</option>
+          <option value="SHORT">Short</option>
+        </select>
+        <select
+          value={sortKey}
+          onChange={(e) => setSortKey(e.target.value)}
+          className="rounded-lg border border-white/10 bg-zinc-900 px-3 py-1.5 text-sm"
+        >
+          <option value="time">Newest</option>
+          <option value="confidence">Confidence</option>
+        </select>
+        <select
+          value={intervalMs}
+          onChange={(e) => setIntervalMs(Number(e.target.value))}
+          className="rounded-lg border border-white/10 bg-zinc-900 px-3 py-1.5 text-sm"
+        >
+          <option value={3000}>3s</option>
+          <option value={5000}>5s</option>
+          <option value={10000}>10s</option>
+          <option value={30000}>30s</option>
+        </select>
+        <button
+          onClick={() => setPaused((p) => !p)}
+          className={`inline-flex items-center gap-2 rounded-lg border border-white/10 px-3 py-1.5 text-sm ${paused ? 'bg-rose-600/20 text-rose-300' : 'bg-zinc-900 hover:bg-zinc-800'}`}
+        >
+          {paused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />} {paused ? 'Resume' : 'Pause'}
+        </button>
+      </div>
+
       {error && <div className="mb-3 text-xs text-amber-400">{error}</div>}
       <div ref={listRef} className="flex flex-col gap-3 max-h-[560px] overflow-auto pr-1">
-        {signals.map((s) => (
+        {filtered.map((s) => (
           <SignalCard key={`${s.pair}-${s.timestamp}`} s={s} />
         ))}
+        {!filtered.length && (
+          <div className="rounded-xl border border-white/10 bg-zinc-900 p-6 text-center text-sm text-white/50">
+            No signals match current filters.
+          </div>
+        )}
       </div>
     </section>
   );

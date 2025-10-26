@@ -10,9 +10,10 @@ function getColorFromVol(vol) {
   return 'bg-rose-600/80 text-black';
 }
 
-export default function Heatmap() {
+export default function Heatmap({ onSelectPair }) {
   const [data, setData] = useState([]);
   const [error, setError] = useState('');
+  const [limit, setLimit] = useState(10);
 
   const fetchHeatmap = async () => {
     try {
@@ -31,22 +32,31 @@ export default function Heatmap() {
     return () => clearInterval(id);
   }, []);
 
-  const sorted = useMemo(() => [...data].sort((a, b) => parseFloat(b.vol_pct) - parseFloat(a.vol_pct)), [data]);
+  const sorted = useMemo(() => [...data].sort((a, b) => parseFloat(b.vol_pct) - parseFloat(a.vol_pct)).slice(0, limit), [data, limit]);
 
   return (
     <section className="w-full">
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-lg font-medium text-white">Volatility Heatmap</h2>
-        <p className="text-xs text-white/50">Top 10 movers</p>
+        <div className="flex items-center gap-2">
+          <p className="text-xs text-white/50">Top</p>
+          <select value={limit} onChange={(e) => setLimit(Number(e.target.value))} className="rounded-lg border border-white/10 bg-zinc-900 px-2 py-1 text-xs">
+            <option value={10}>10</option>
+            <option value={15}>15</option>
+            <option value={20}>20</option>
+          </select>
+        </div>
       </div>
       {error && <div className="mb-3 text-xs text-amber-400">{error}</div>}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
         {sorted.map((item) => {
           const volNum = parseFloat(item.vol_pct);
           return (
-            <div
+            <button
+              type="button"
+              onClick={() => onSelectPair && onSelectPair(item.pair)}
               key={item.pair}
-              className={`rounded-lg p-3 border border-white/10 ${getColorFromVol(volNum)} transition-colors`}
+              className={`text-left rounded-lg p-3 border border-white/10 ${getColorFromVol(volNum)} transition-colors hover:ring-1 hover:ring-white/20`}
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-medium">{item.pair}</span>
@@ -58,7 +68,7 @@ export default function Heatmap() {
                   style={{ width: `${Math.min(Math.abs(volNum) * 10, 100)}%` }}
                 />
               </div>
-            </div>
+            </button>
           );
         })}
       </div>
